@@ -105,19 +105,10 @@ data Query q r
   , query_params :: [QueryParam]
   }
 
-class (HasId r, ToJSVal r, FromJSVal r) => Route q r where
+class (ToJSVal r, FromJSVal r) => Route q r where
   renderRoute :: q r -> Text
 
-add
-  :: (MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
-  => q r -> Event t r -> m ()
-add route itemE = do
-  result <- collection $ Query route []
-  void $ performEvent $ fmap (\item -> liftJSM $ do
-    document <- result ^. js1 ("doc" :: String) (getId item)
-    document ^. js1 ("set" :: String) item
-    ) itemE
-
+-- READ
 query
   :: (Route q r, MonadFirebase m)
   => Query q r -> Firebase m [r]
@@ -130,6 +121,47 @@ query q = do
   _ <- liftJSM $ result ^. (js0 ("get" :: String) . js1 ("then" :: String) callback)
   liftIO $ takeMVar responseRef
 
+-- WRITE
+add
+  :: (MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
+  => q r -> Event t r -> m ()
+add route itemE = do
+  result <- collection $ Query route []
+  void $ performEvent $ fmap (\item -> liftJSM $
+    result ^. js1 ("add" :: String) item
+    ) itemE
+
+set
+  :: (HasId r, MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
+  => q r -> Event t r -> m ()
+set route itemE = do
+  result <- collection $ Query route []
+  void $ performEvent $ fmap (\item -> liftJSM $ do
+    document <- result ^. js1 ("doc" :: String) (getId item)
+    document ^. js1 ("set" :: String) item
+    ) itemE
+
+update
+  :: (HasId r, MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
+  => q r -> Event t r -> m ()
+update route itemE = do
+  result <- collection $ Query route []
+  void $ performEvent $ fmap (\item -> liftJSM $ do
+    document <- result ^. js1 ("doc" :: String) (getId item)
+    document ^. js1 ("update" :: String) item
+    ) itemE
+
+delete
+  :: (HasId r, MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
+  => q r -> Event t r -> m ()
+delete route itemE = do
+  result <- collection $ Query route []
+  void $ performEvent $ fmap (\item -> liftJSM $ do
+    document <- result ^. js1 ("doc" :: String) (getId item)
+    document ^. js0 ("delete" :: String)
+    ) itemE
+
+-- META READ
 subscribe
   :: (MonadFirebase m, MonadFirebase (Performable m), PostBuild t m, TriggerEvent t m, PerformEvent t m, Route q r, MonadHold t m)
   => Query q r -> m (Dynamic t [r])

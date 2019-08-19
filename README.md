@@ -11,17 +11,17 @@ Note: importing the Javascript SDK is required until it is replaced with direct 
 -- All events are run in MonadFirebase, which holds a reference to a Firebase application object
 
 -- Read
-query        :: Query q r -> m [r]
+query        :: Route q r => Query q r -> m [r]
 
 -- Write
-add          :: q r -> Event t r -> m ()
-update       :: _
-set          :: _
-delete       :: _
+add          :: Route q r => q r -> Event t r -> m ()
+update       :: (Route q r, HasId r) => q r -> Event t r -> m ()
+set          :: (Route q r, HasId r) => q r -> Event t r -> m ()
+delete       :: (Route q r, HasId r) => q r -> Event t r -> m ()
 
 -- Meta-read
-subscribe    :: Query q r -> m (Dynamic t [r])
-dynSubscribe :: Dynamic t (Query q r) -> m (Dynamic t [r])
+subscribe    :: Route q r => Query q r -> m (Dynamic t [r])
+dynSubscribe :: Route q r => Dynamic t (Query q r) -> m (Dynamic t [r])
 ```
 
 #### Example
