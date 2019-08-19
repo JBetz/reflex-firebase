@@ -20,8 +20,8 @@ set          :: (Route q r, HasId r) => q r -> Event t r -> m ()
 delete       :: (Route q r, HasId r) => q r -> Event t r -> m ()
 
 -- Meta-read
-subscribe    :: Route q r => Query q r -> m (Dynamic t [r])
-dynSubscribe :: Route q r => Dynamic t (Query q r) -> m (Dynamic t [r])
+subscribe    :: Route q r => Query q r -> m (Dynamic t [(Id, r)])
+dynSubscribe :: Route q r => Dynamic t (Query q r) -> m (Dynamic t [(Id, r)])
 ```
 
 #### Example

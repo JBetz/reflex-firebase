@@ -16,6 +16,7 @@ module Reflex.Firebase
   , Op (..)
   , Direction (..)
   , Route (..)
+  , Id (..)
   , HasId (..)
   , MonadFirebase
   , runFirebase
@@ -96,8 +97,11 @@ type Firebase = ReaderT FirestoreInstance
 
 newtype FirestoreInstance = FirestoreInstance { unFirestoreInstance :: JSVal }
 
+newtype Id = Id { unId :: Text }
+  deriving (Generic, ToJSVal, FromJSVal)
+
 class HasId r where
-  getId :: r -> Text
+  getId :: r -> Id
 
 data Query q r
   = Query
@@ -111,7 +115,7 @@ class (ToJSVal r, FromJSVal r) => Route q r where
 -- READ
 query
   :: (Route q r, MonadFirebase m)
-  => Query q r -> Firebase m [r]
+  => Query q r -> Firebase m [(Id, r)]
 query q = do
   result <- collection q
   responseRef <- liftIO newEmptyMVar
@@ -164,7 +168,7 @@ delete route itemE = do
 -- META READ
 subscribe
   :: (MonadFirebase m, MonadFirebase (Performable m), PostBuild t m, TriggerEvent t m, PerformEvent t m, Route q r, MonadHold t m)
-  => Query q r -> m (Dynamic t [r])
+  => Query q r -> m (Dynamic t [(Id, r)])
 subscribe q = do
   postBuild <- getPostBuild
   let act callback = do
@@ -179,7 +183,7 @@ subscribe q = do
 
 dynSubscribe
   :: (Route q r, MonadFirebase m, MonadFirebase (Performable m), TriggerEvent t m, PerformEvent t m, MonadHold t m)
-  => Dynamic t (Query q r) -> m (Dynamic t [r])
+  => Dynamic t (Query q r) -> m (Dynamic t [(Id, r)])
 dynSubscribe dynQuery = do
   db <- askDb
   let act q callback = liftJSM $ do
@@ -228,11 +232,14 @@ applyParams q c =
         c ^. js2 ("orderBy" :: String) field (show direction)
 
 
-getSnapshotData :: (MonadJSM m, FromJSVal r) => JSVal -> m [r]
+getSnapshotData :: (MonadJSM m, FromJSVal r) => JSVal -> m [(Id, r)]
 getSnapshotData val = liftJSM $ do
   snapshotObj <- makeObject val
   docs <- getProp "docs" snapshotObj >>= fromJSValUnchecked
-  liftJSM $ traverse (\doc -> doc ^. js0 ("data" :: String) >>= fromJSValUnchecked) (docs :: [JSVal])
+  liftJSM $ traverse (\doc -> do
+    idResult <- doc ^. js ("id" :: String) >>= fromJSValUnchecked
+    dataResult <- doc ^. js0 ("data" :: String) >>= fromJSValUnchecked
+    pure (Id idResult, dataResult)) (docs :: [JSVal])
 
 consoleLog val =
   void $ jsg ("console" :: String) ^. js1 ("log" :: String) val
