@@ -1,4 +1,4 @@
-Firebase bindings for `reflex-dom`. Useful for rapid prototyping with a cloud-hosted database.
+Firebase bindings for `reflex-dom`. Useful for rapid prototyping with a cloud-hosted database. Originally a proof of concept, the goal is to become production ready, and to utilize the best of Haskell's type system to better manage Firebase's NoSQL document store.
 
 ### Setup
 1. Firebase: [setup instructions](https://firebase.google.com/docs/web/setup)
