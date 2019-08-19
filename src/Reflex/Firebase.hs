@@ -21,6 +21,10 @@ module Reflex.Firebase
   , MonadFirebase
   , runFirebase
   , add
+  , dynAdd
+  , set
+  , update
+  , delete
   , query
   , subscribe
   , dynSubscribe
@@ -134,6 +138,17 @@ add route itemE = do
   void $ performEvent $ fmap (\item -> liftJSM $
     result ^. js1 ("add" :: String) item
     ) itemE
+
+dynAdd
+  :: (MonadFirebase m, MonadFirebase (Performable m), TriggerEvent t m, PerformEvent t m, Route q r)
+  => Dynamic t (q r) -> Event t r -> m ()
+dynAdd dynRoute itemE = do
+  db <- askDb
+  let act (route, item) callback = liftJSM $ do
+        result <- db ^. js1 ("collection" :: String) (renderRoute route)
+        void $ result ^. js1 ("add" :: String) item
+  _ <- performEventAsync (act <$> attach (current dynRoute) itemE)
+  pure ()
 
 set
   :: (HasId r, MonadFirebase m, MonadFirebase (Performable m), PerformEvent t m, Route q r)
