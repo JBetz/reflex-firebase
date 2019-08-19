@@ -1,4 +1,4 @@
-cabal-version:       2.4
+cabal-version:       2.2
 
 name:                reflex-firebase
 version:             0.1.0.0
@@ -14,7 +14,11 @@ library
     Reflex.Firebase
   build-depends:
       base
-    , microlens
+    , aeson
+    , ghcjs-dom
+    , jsaddle
+    , lens
+    , mtl
     , reflex
     , reflex-dom-core
     , text
