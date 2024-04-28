@@ -30,7 +30,7 @@ do
   let route = Route_RoomMessages "#reflex-frp"
       params = [OrderBy "time_sent" Asc, Limit 100]
   dynMessages <- subscribe (Query route params)
-  el "ul" $ simpleList (\message -> el "li" $ text $ view content message) messagesD
+  el "ul" $ simpleList (\message -> el "li" $ text $ view content message) dynMessages
 ```
 
 ### Todo
